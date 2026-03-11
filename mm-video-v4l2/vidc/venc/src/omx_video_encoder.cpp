@@ -175,6 +175,18 @@ OMX_ERRORTYPE omx_venc::component_init(OMX_STRING role)
         return OMX_ErrorInsufficientResources;
     }
 
+    if (codec_type == OMX_VIDEO_CodingAVC) {
+        char inband_prop[PROPERTY_VALUE_MAX] = {0};
+        property_get("vidc.enc.prepend_spspps", inband_prop, "1");
+        if (atoi(inband_prop)) {
+            if (!handle->venc_set_inband_video_header(OMX_TRUE)) {
+                DEBUG_PRINT_ERROR("WARNING: Failed to enable inband SPS/PPS with IDR");
+            } else {
+                DEBUG_PRINT_HIGH("Enabled inband SPS/PPS with IDR");
+            }
+        }
+    }
+
     //Intialise the OMX layer variables
     memset(&m_pCallbacks,0,sizeof(OMX_CALLBACKTYPE));
 

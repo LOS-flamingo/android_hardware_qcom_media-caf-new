@@ -266,6 +266,7 @@ class venc_dev
         bool venc_get_performance_level(OMX_U32 *perflevel);
         bool venc_get_vui_timing_info(OMX_U32 *enabled);
         bool venc_get_peak_bitrate(OMX_U32 *peakbitrate);
+        bool venc_set_inband_video_header(OMX_BOOL enable);
 
         struct venc_debug_cap m_debug;
         OMX_U32 m_nDriver_fd;
@@ -354,7 +355,6 @@ class venc_dev
         bool venc_set_useltr(OMX_U32 frameIdx);
         bool venc_set_markltr(OMX_U32 frameIdx);
         bool venc_enable_initial_qp(QOMX_EXTNINDEX_VIDEO_INITIALQP* initqp);
-        bool venc_set_inband_video_header(OMX_BOOL enable);
         bool venc_set_au_delimiter(OMX_BOOL enable);
         bool venc_set_vpe_rotation(OMX_S32 rotation_angle);
         bool venc_set_deinterlace(OMX_U32 enable);
@@ -410,4 +410,3 @@ enum instance_state {
     MSM_VIDC_CORE_UNINIT,
 };
 #endif
-
