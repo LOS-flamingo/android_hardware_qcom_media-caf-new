@@ -2455,9 +2455,14 @@ bool venc_dev::venc_empty_buf(void *buffer, void *pmem_data_buf, unsigned index,
                         buf.flags = V4L2_MSM_BUF_FLAG_YUV_601_709_CLAMP;
 #endif
                     if (meta_buf->meta_handle->numFds + meta_buf->meta_handle->numInts > 2) {
+                        OMX_U32 meta_size = meta_buf->meta_handle->data[2];
+                        OMX_U32 req_size = m_sInput_buff_property.datasize;
                         plane.data_offset = meta_buf->meta_handle->data[1];
-                        plane.length = meta_buf->meta_handle->data[2];
-                        plane.bytesused = meta_buf->meta_handle->data[2];
+                        plane.length = req_size ? req_size : meta_size;
+                        plane.bytesused = meta_size ? meta_size : plane.length;
+                        if (plane.bytesused > plane.length) {
+                                plane.bytesused = plane.length;
+                        }
                     }
                     DEBUG_PRINT_LOW("venc_empty_buf: camera buf: fd = %d filled %d of %d flag 0x%x",
                             fd, plane.bytesused, plane.length, buf.flags);
@@ -2465,8 +2470,15 @@ bool venc_dev::venc_empty_buf(void *buffer, void *pmem_data_buf, unsigned index,
                     private_handle_t *handle = (private_handle_t *)meta_buf->meta_handle;
                     fd = handle->fd;
                     plane.data_offset = 0;
-                    plane.length = handle->size;
-                    plane.bytesused = handle->size;
+                    {
+                        OMX_U32 meta_size = handle->size;
+                        OMX_U32 req_size = m_sInput_buff_property.datasize;
+                        plane.length = req_size ? req_size : meta_size;
+                        plane.bytesused = meta_size ? meta_size : plane.length;
+                        if (plane.bytesused > plane.length) {
+                                plane.bytesused = plane.length;
+                        }
+                    }
                         DEBUG_PRINT_LOW("venc_empty_buf: Opaque camera buf: fd = %d "
                                 ": filled %d of %d", fd, plane.bytesused, plane.length);
                 }
@@ -2502,7 +2514,10 @@ bool venc_dev::venc_empty_buf(void *buffer, void *pmem_data_buf, unsigned index,
     rc = ioctl(m_nDriver_fd, VIDIOC_QBUF, &buf);
 
     if (rc) {
-        DEBUG_PRINT_ERROR("Failed to qbuf (etb) to driver");
+        DEBUG_PRINT_ERROR("Failed to qbuf (etb) to driver: errno=%d (%s) idx=%u fd=%d len=%u used=%u off=%u flags=0x%x meta=%d color=%d in_size=%u",
+                errno, strerror(errno), index, fd, plane.length, plane.bytesused,
+                plane.data_offset, buf.flags, metadatamode, color_format,
+                m_sInput_buff_property.datasize);
         return false;
     }
 
@@ -2580,7 +2595,9 @@ bool venc_dev::venc_fill_buf(void *buffer, void *pmem_data_buf,unsigned index,un
     rc = ioctl(m_nDriver_fd, VIDIOC_QBUF, &buf);
 
     if (rc) {
-        DEBUG_PRINT_ERROR("Failed to qbuf (ftb) to driver");
+        DEBUG_PRINT_ERROR("Failed to qbuf (ftb) to driver: errno=%d (%s) idx=%u fd=%d len=%u used=%u off=%u",
+                errno, strerror(errno), index, fd, plane[0].length, plane[0].bytesused,
+                plane[0].data_offset);
         return false;
     }
 
